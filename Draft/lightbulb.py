@@ -3,9 +3,13 @@ import matplotlib.pyplot as plt
 import csv
 import math
 
-wavelengths_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\c\wavelengths.csv'
-intensities_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\c\intensities.csv'
-colormatching_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\ciexyz31.csv'
+#wavelengths_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\c\wavelengths.csv'
+#intensities_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\c\intensities.csv'
+#colormatching_filepath = r'D:\Dropbox\Documentos\Curriculos\Thalmic Labs\Vanhackaton Challenge\challenge data\ciexyz31.csv'
+
+wavelengths_filepath = '/Users/tsabino/Dropbox/Documentos/Curriculos/Thalmic Labs/Vanhackaton Challenge/challenge data/b/wavelengths.csv'
+intensities_filepath = '/Users/tsabino/Dropbox/Documentos/Curriculos/Thalmic Labs/Vanhackaton Challenge/challenge data/b/intensities.csv'
+colormatching_filepath = '/Users/tsabino/Dropbox/Documentos/Curriculos/Thalmic Labs/Vanhackaton Challenge/challenge data/ciexyz31.csv'
 
 
 def read_csv(filepath):        
@@ -19,7 +23,7 @@ def read_csv(filepath):
     return np.array(file_contents, dtype=np.float64)
 
 
-def moving_average(a, n=10) :
+def moving_average(a, n=10):
     result = []    
     for i in range(len(a)):
         sum = 0
@@ -37,6 +41,7 @@ def lerp(alpha, a, b):
 
 
 def average_spectrum_samples(l, vals, n, lambda_start, lambda_end):
+    # Handle boundary cases
     if lambda_end <= l[0]:
         return vals[0]
     if lambda_start >= l[n-1]:
@@ -81,25 +86,25 @@ def main():
         
     # Normalize Color Matching function
     for i in range(1, 4):
-        a = color_matching[:,i]
+        a = color_matching[:, i]
         cmin = a.min()
         cmax = a.max()
-        color_matching[:,i] = (color_matching[:,i] - cmin) / (cmax - cmin)
+        color_matching[:, i] = (color_matching[:, i] - cmin) / (cmax - cmin)
 
-    cie_lambda = color_matching[:,0]
-    cie_x = color_matching[:,1]
-    cie_y = color_matching[:,2]
-    cie_z = color_matching[:,3]
+    cie_lambda = color_matching[:, 0]
+    cie_x = color_matching[:, 1]
+    cie_y = color_matching[:, 2]
+    cie_z = color_matching[:, 3]
     n_cie_samples = len(cie_lambda)
 
+    # Range of spectrum visible to the human eye. Frequency in nanometers
     sampled_lambda_start = 340
     sampled_lambda_end = 840
-    n_spectral_samples = 10
 
-    plt.figure()
-        
+    perceived_color = []
+
+    # for sample_idx in range(5):
     for sample_idx in range(len(intensites)):
-    #for sample_idx in range(20):
         print("Sample " + str(sample_idx) + " of " + str(len(intensites)))
         sample_data = intensites[sample_idx]
         n_spectral_samples = len(sample_data)
@@ -107,47 +112,47 @@ def main():
         x_c = []
         y_c = []
         z_c = []
-
         sample_data_c = []
 
+        # Loop over the spectrum sample interpolating the data for later convolution
         for i in range(n_spectral_samples):
             wl0 = lerp(float(i) / float(n_spectral_samples), sampled_lambda_start, sampled_lambda_end)
             wl1 = lerp(float(i+1) / float(n_spectral_samples), sampled_lambda_start, sampled_lambda_end)
+
             x_c += [average_spectrum_samples(cie_lambda, cie_x, n_cie_samples, wl0, wl1)]
             y_c += [average_spectrum_samples(cie_lambda, cie_y, n_cie_samples, wl0, wl1)]
             z_c += [average_spectrum_samples(cie_lambda, cie_z, n_cie_samples, wl0, wl1)]    
 
-            sample_data_c += [average_spectrum_samples(wavelengths[:,1], sample_data, n_spectral_samples, wl0, wl1)]
+            sample_data_c += [average_spectrum_samples(wavelengths[:, 1], sample_data, n_spectral_samples, wl0, wl1)]
 
+        # Calculate the CIE tristimulus response by convolving the color matching function with the sampled data
         x_sum = 0.0
         y_sum = 0.0
-        z_sum = 0.0        
+        z_sum = 0.0
         for i in range(n_spectral_samples):
             x_sum += x_c[i] * sample_data_c[i]
             y_sum += y_c[i] * sample_data_c[i]
             z_sum += z_c[i] * sample_data_c[i]
 
-        #yint = 0.0        
-        #for i in range(n_spectral_samples):
-        #    yint += y_c[i]
-
         cie_xyz_x = x_sum / (x_sum + y_sum + z_sum)
         cie_xyz_y = y_sum / (x_sum + y_sum + z_sum)          
         
-        print(cie_xyz_x, cie_xyz_y)
+        perceived_color += [[cie_xyz_x, cie_xyz_y]]
 
-        plt.scatter(cie_xyz_x, cie_xyz_y)     
-            
-        #plt.plot(wavelengths[:,1], x_c)
-        #plt.plot(wavelengths[:,1], x1_c)
-        
-        # plt.plot(wavelengths[:,1], z_c)
-    
+    perceived_color = np.array(perceived_color)
+    perceived_color_norm = [np.linalg.norm(p) for p in perceived_color]
+
+    print(np.average(perceived_color_norm))
+    print(np.std(perceived_color_norm))
+    print(np.var(perceived_color_norm))
+
+    plt.figure()
     #for i in range(1, 4):
     #    plt.plot(color_matching[:,0], color_matching[:,i])
 
     #for i in range(1):        
-    #    plt.plot(wavelengths[:,1], intensites[i])    
+    #    plt.plot(wavelengths[:,1], intensites[i])
+    plt.scatter(perceived_color[:, 0], perceived_color[:, 1])
     plt.xlim([0, 0.7])
     plt.ylim([0, 0.8])
     plt.show()
