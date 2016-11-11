@@ -6,13 +6,6 @@
 #include <iterator>
 #include <algorithm>
 
-auto GetFileSize(std::fstream Filestream)
-{
-	Filestream.seekg(0, std::ios::end);
-	auto FileSize = Filestream.tellg();
-	Filestream.seekg(0, std::ios::beg);
-	return FileSize;
-}
 
 auto ReadCSVFile(const std::string& filepath, char Separator = ',')
 {
@@ -112,24 +105,121 @@ auto MovingAverageFilter(const std::vector<double>& Values, int N = 10)
 				Count++;
 			}
 		}
-		Result[i] = Sum / static_cast<double>(Count);
+		Result[i] = Sum / Count;
 	}
 	return Result;
+}
+
+void NormalizeData(std::vector<double>& Data)
+{
+	auto MinMaxPair = std::minmax_element(Data.begin(), Data.end());
+	auto Min = *MinMaxPair.first;
+	auto Max = *MinMaxPair.second;
+
+#	pragma omp parallel for
+	for (int i = 0; i < Data.size(); ++i)
+	{
+		Data[i] = (Data[i] - Min) / (Max - Min);
+	}
 }
 
 int main()
 {
 	const std::string IntensitiesFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\a\\intensities.csv";
 	const std::string WavelengthsFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\a\\wavelengths.csv";
-	const std::string ColorMatchingFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\a\\ciexyz31.csv";
+	const std::string ColorMatchingFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\ciexyz31.csv";
 	
 	auto Intensities = ReadCSVFile(IntensitiesFilepath);
 	auto Wavelengths = ReadCSVFile(WavelengthsFilepath);
 	auto ColorMatching = ReadCSVFile(ColorMatchingFilepath);
 
-	for (auto IntensityValues : Intensities)
-	{
+	std::vector<double> CIELambda(ColorMatching.size());
+	std::vector<double> CIE_X(ColorMatching.size());
+	std::vector<double> CIE_Y(ColorMatching.size());
+	std::vector<double> CIE_Z(ColorMatching.size());
 
+#	pragma omp parallel for
+	for (int i = 0; i < ColorMatching.size(); ++i)
+	{
+		CIELambda[i] = ColorMatching[i][0];
+		CIE_X[i] = ColorMatching[i][1];
+		CIE_Y[i] = ColorMatching[i][2];
+		CIE_Z[i] = ColorMatching[i][3];
+	}
+	ColorMatching.clear();
+	ColorMatching.shrink_to_fit();
+
+	std::vector<double> WaveLengthsValues(Wavelengths.size());
+
+#	pragma omp parallel for
+	for (int i = 0; i < Wavelengths.size(); ++i)
+	{
+		WaveLengthsValues[i] = Wavelengths[i][1];
+	}
+
+	// Remove Noise from data
+	{
+		decltype(Intensities) FilteredIntensities;
+		for (auto IntensityValues : Intensities)
+		{
+			FilteredIntensities.emplace_back(MovingAverageFilter(IntensityValues));
+		}
+		Intensities.swap(FilteredIntensities);
+	}	
+	
+	// Normalize the Color Matching function
+	NormalizeData(CIE_X);
+	NormalizeData(CIE_Y);
+	NormalizeData(CIE_Z);	
+
+	double SampledLambdaStart = 340;
+	double SampledLambdaEnd = 840;	
+
+	std::vector<std::pair<double, double>> Result{ Intensities.size() };
+
+#	pragma omp parallel for
+	for (int SampleIdx = 0; SampleIdx < Intensities.size(); ++SampleIdx)
+	{
+#		pragma omp critical
+		std::cout << "Sample " << SampleIdx << " of " << Intensities.size() << std::endl;
+
+		const auto& SampleData = Intensities[SampleIdx];
+		auto NumberOfSpectralSamples = static_cast<double>(SampleData.size());
+		int NumberOfCIESamples = CIELambda.size();
+
+		std::vector<double> X, Y, Z, SampleDataC;
+
+		for (int i = 0; i < NumberOfSpectralSamples; ++i)
+		{
+			auto di = static_cast<double>(i);
+			auto WL0 = Lerp(di / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
+			auto WL1 = Lerp(di + 1.0 / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
+
+			X.push_back(AverageSpectrumSamples(CIELambda, CIE_X, NumberOfCIESamples, WL0, WL1));
+			Y.push_back(AverageSpectrumSamples(CIELambda, CIE_Y, NumberOfCIESamples, WL0, WL1));
+			Z.push_back(AverageSpectrumSamples(CIELambda, CIE_Z, NumberOfCIESamples, WL0, WL1));
+			SampleDataC.push_back(AverageSpectrumSamples(WaveLengthsValues, SampleData, NumberOfSpectralSamples, WL0, WL1));
+		}
+
+		double XSum = 0.0;
+		double YSum = 0.0;
+		double ZSum = 0.0;
+		for (int i = 0; i < NumberOfSpectralSamples; ++i)
+		{
+			XSum += X[i] * SampleDataC[i];
+			YSum += Y[i] * SampleDataC[i];
+			ZSum += Z[i] * SampleDataC[i];
+		}
+
+		double CIE_XYZ_X = XSum / (XSum + YSum + ZSum);
+		double CIE_XYZ_Y = YSum / (XSum + YSum + ZSum);
+
+		Result[SampleIdx] = { CIE_XYZ_X, CIE_XYZ_Y };
+	}
+
+	for (int i = 0; i < Result.size(); ++i) 
+	{
+		std::cout << Result[i].first << " " << Result[i].second << std::endl;
 	}
 
     return 0;
