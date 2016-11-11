@@ -6,10 +6,17 @@
 #include <iterator>
 #include <algorithm>
 
+#include "CommandLineParser.h"
+
 
 auto ReadCSVFile(const std::string& filepath, char Separator = ',')
 {
 	std::ifstream CSVStream{ filepath };	
+
+	if (!CSVStream.is_open())
+	{
+		throw std::runtime_error("Cannot open file " + filepath);
+	}
 
 	std::vector<std::vector<double>> CSVContents;
 	
@@ -30,7 +37,6 @@ auto ReadCSVFile(const std::string& filepath, char Separator = ',')
 
 	return CSVContents;
 }
-
 
 inline double Lerp(double Alpha, double A, double B)
 {
@@ -123,103 +129,125 @@ void NormalizeData(std::vector<double>& Data)
 	}
 }
 
-int main()
+int main(int ArgC, char* ArgV[])
 {
-	const std::string IntensitiesFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\a\\intensities.csv";
-	const std::string WavelengthsFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\a\\wavelengths.csv";
-	const std::string ColorMatchingFilepath = "D:\\Dropbox\\Documentos\\Curriculos\\Thalmic Labs\\Vanhackaton Challenge\\challenge data\\ciexyz31.csv";
-	
-	auto Intensities = ReadCSVFile(IntensitiesFilepath);
-	auto Wavelengths = ReadCSVFile(WavelengthsFilepath);
-	auto ColorMatching = ReadCSVFile(ColorMatchingFilepath);
+	CommandLineParser CmdParser(ArgC, ArgV);
 
-	std::vector<double> CIELambda(ColorMatching.size());
-	std::vector<double> CIE_X(ColorMatching.size());
-	std::vector<double> CIE_Y(ColorMatching.size());
-	std::vector<double> CIE_Z(ColorMatching.size());
-
-#	pragma omp parallel for
-	for (int i = 0; i < ColorMatching.size(); ++i)
+	if (!CmdParser.OptionExists("--intensities") &&
+		!CmdParser.OptionExists("--wavelengths") &&
+		!CmdParser.OptionExists("--color-matching"))
 	{
-		CIELambda[i] = ColorMatching[i][0];
-		CIE_X[i] = ColorMatching[i][1];
-		CIE_Y[i] = ColorMatching[i][2];
-		CIE_Z[i] = ColorMatching[i][3];
-	}
-	ColorMatching.clear();
-	ColorMatching.shrink_to_fit();
-
-	std::vector<double> WaveLengthsValues(Wavelengths.size());
-
-#	pragma omp parallel for
-	for (int i = 0; i < Wavelengths.size(); ++i)
-	{
-		WaveLengthsValues[i] = Wavelengths[i][1];
+		std::cout << "USAGE: " << ArgV[0] << "--intensities [CSV Filepath] --wavelengths [CSV Filepath] --color-matching [CSV Filepath]" << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	// Remove Noise from data
+	auto IntensitiesFilepath = CmdParser.GetOptionValue("--intensities");
+	auto WavelengthsFilepath = CmdParser.GetOptionValue("--wavelengths");
+	auto ColorMatchingFilepath = CmdParser.GetOptionValue("--color-matching");
+
+	try
 	{
-		decltype(Intensities) FilteredIntensities;
-		for (auto IntensityValues : Intensities)
+		auto Intensities = ReadCSVFile(IntensitiesFilepath);
+		auto Wavelengths = ReadCSVFile(WavelengthsFilepath);
+		auto ColorMatching = ReadCSVFile(ColorMatchingFilepath);
+
+		std::vector<double> CIELambda(ColorMatching.size());
+		std::vector<double> CIE_X(ColorMatching.size());
+		std::vector<double> CIE_Y(ColorMatching.size());
+		std::vector<double> CIE_Z(ColorMatching.size());
+
+#		pragma omp parallel for
+		for (int i = 0; i < ColorMatching.size(); ++i)
 		{
-			FilteredIntensities.emplace_back(MovingAverageFilter(IntensityValues));
+			CIELambda[i] = ColorMatching[i][0];
+			CIE_X[i] = ColorMatching[i][1];
+			CIE_Y[i] = ColorMatching[i][2];
+			CIE_Z[i] = ColorMatching[i][3];
 		}
-		Intensities.swap(FilteredIntensities);
-	}	
-	
-	// Normalize the Color Matching function
-	NormalizeData(CIE_X);
-	NormalizeData(CIE_Y);
-	NormalizeData(CIE_Z);	
+		ColorMatching.clear();
+		ColorMatching.shrink_to_fit();
 
-	double SampledLambdaStart = 340;
-	double SampledLambdaEnd = 840;	
+		std::vector<double> WaveLengthsValues(Wavelengths.size());
 
-	std::vector<std::pair<double, double>> Result{ Intensities.size() };
-
-#	pragma omp parallel for
-	for (int SampleIdx = 0; SampleIdx < Intensities.size(); ++SampleIdx)
-	{
-#		pragma omp critical
-		std::cout << "Sample " << SampleIdx << " of " << Intensities.size() << std::endl;
-
-		const auto& SampleData = Intensities[SampleIdx];
-		auto NumberOfSpectralSamples = static_cast<double>(SampleData.size());
-		int NumberOfCIESamples = CIELambda.size();
-
-		std::vector<double> X, Y, Z, SampleDataC;
-
-		for (int i = 0; i < NumberOfSpectralSamples; ++i)
+#		pragma omp parallel for
+		for (int i = 0; i < Wavelengths.size(); ++i)
 		{
-			auto di = static_cast<double>(i);
-			auto WL0 = Lerp(di / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
-			auto WL1 = Lerp(di + 1.0 / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
-
-			X.push_back(AverageSpectrumSamples(CIELambda, CIE_X, NumberOfCIESamples, WL0, WL1));
-			Y.push_back(AverageSpectrumSamples(CIELambda, CIE_Y, NumberOfCIESamples, WL0, WL1));
-			Z.push_back(AverageSpectrumSamples(CIELambda, CIE_Z, NumberOfCIESamples, WL0, WL1));
-			SampleDataC.push_back(AverageSpectrumSamples(WaveLengthsValues, SampleData, NumberOfSpectralSamples, WL0, WL1));
+			WaveLengthsValues[i] = Wavelengths[i][1];
 		}
 
-		double XSum = 0.0;
-		double YSum = 0.0;
-		double ZSum = 0.0;
-		for (int i = 0; i < NumberOfSpectralSamples; ++i)
+		// Remove Noise from data
 		{
-			XSum += X[i] * SampleDataC[i];
-			YSum += Y[i] * SampleDataC[i];
-			ZSum += Z[i] * SampleDataC[i];
+			decltype(Intensities) FilteredIntensities;
+			for (auto IntensityValues : Intensities)
+			{
+				FilteredIntensities.emplace_back(MovingAverageFilter(IntensityValues));
+			}
+			Intensities.swap(FilteredIntensities);
 		}
 
-		double CIE_XYZ_X = XSum / (XSum + YSum + ZSum);
-		double CIE_XYZ_Y = YSum / (XSum + YSum + ZSum);
+		// Normalize the Color Matching function
+		NormalizeData(CIE_X);
+		NormalizeData(CIE_Y);
+		NormalizeData(CIE_Z);
 
-		Result[SampleIdx] = { CIE_XYZ_X, CIE_XYZ_Y };
+		// Define the visible spectrum
+		const double SampledLambdaStart = 340;
+		const double SampledLambdaEnd = 840;
+
+		std::vector<std::pair<double, double>> Result{ Intensities.size() };
+
+		// Finally process the samples
+#		pragma omp parallel for
+		for (int SampleIdx = 0; SampleIdx < Intensities.size(); ++SampleIdx)
+		{
+//#			pragma omp critical
+//			std::cout << "Sample " << SampleIdx << " of " << Intensities.size() << std::endl;
+
+			const auto& SampleData = Intensities[SampleIdx];
+			auto NumberOfSpectralSamples = static_cast<int>(SampleData.size());
+			auto NumberOfCIESamples = static_cast<int>(CIELambda.size());
+
+			std::vector<double> X, Y, Z, Lambdas;
+
+			// For each sample do an a linear interpolation on the function to calculate the XY coordinates
+			for (int i = 0; i < NumberOfSpectralSamples; ++i)
+			{
+				auto di = static_cast<double>(i);
+				auto WL0 = Lerp(di / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
+				auto WL1 = Lerp(di + 1.0 / NumberOfSpectralSamples, SampledLambdaStart, SampledLambdaEnd);
+
+				X.push_back(AverageSpectrumSamples(CIELambda, CIE_X, NumberOfCIESamples, WL0, WL1));
+				Y.push_back(AverageSpectrumSamples(CIELambda, CIE_Y, NumberOfCIESamples, WL0, WL1));
+				Z.push_back(AverageSpectrumSamples(CIELambda, CIE_Z, NumberOfCIESamples, WL0, WL1));
+				Lambdas.push_back(AverageSpectrumSamples(WaveLengthsValues, SampleData, NumberOfSpectralSamples, WL0, WL1));
+			}
+
+			// Finally we calculate the chromatic response of the observer ...
+			double XSum = 0.0;
+			double YSum = 0.0;
+			double ZSum = 0.0;
+			for (int i = 0; i < NumberOfSpectralSamples; ++i)
+			{
+				XSum += X[i] * Lambdas[i];
+				YSum += Y[i] * Lambdas[i];
+				ZSum += Z[i] * Lambdas[i];
+			}
+
+			// .. and then we normalize the tristimulus values to get the XY coordinates of the CIE1931 diagram
+			double CIE_XYZ_X = XSum / (XSum + YSum + ZSum);
+			double CIE_XYZ_Y = YSum / (XSum + YSum + ZSum);
+
+			Result[SampleIdx] = { CIE_XYZ_X, CIE_XYZ_Y };
+		}
+
+		for (int i = 0; i < Result.size(); ++i)
+		{
+			std::cout << Result[i].first << " " << Result[i].second << std::endl;
+		}
 	}
-
-	for (int i = 0; i < Result.size(); ++i) 
+	catch (const std::runtime_error& Exception)
 	{
-		std::cout << Result[i].first << " " << Result[i].second << std::endl;
+		std::cerr << Exception.what() << std::endl;
 	}
 
     return 0;

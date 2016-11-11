@@ -6,6 +6,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(
     LightBulbChallenge
-    main.cpp
-	draft.py
+    main.cpp	
+	CommandLineParser.cpp
+	CommandLineParser.h
 )
