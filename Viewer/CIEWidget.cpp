@@ -4,6 +4,8 @@
 #include <QtWidgets/QAction>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QHBoxLayout>
+#include <QtWidgets/QSplitter>
 
 #include <QtCore/QProcess>
 
@@ -12,14 +14,15 @@
 #include <QtCharts/QChartView>
 #include <QtCharts/QValueAxis>
 
-#include <QtWidgets/QHBoxLayout>
-
 using namespace QtCharts;
 
 CIEWidget::CIEWidget(QWidget* Parent) :
 	QWidget(Parent)
 {
-	m_Layout = new QHBoxLayout(this);	
+	m_Splitter = new QSplitter{ this };
+
+	m_Layout = new QHBoxLayout{ this };
+	m_Layout->addWidget(m_Splitter);
 }
 
 void CIEWidget::AddResponse()
@@ -53,6 +56,7 @@ void CIEWidget::AddResponse()
 
 		auto Chart = new QChart;		
 		Chart->legend()->hide();
+		Chart->setTitle(m_LastIntensitiesFilepath);
 		Chart->setAnimationOptions(QChart::AllAnimations);
 
 		auto AxisX = new QValueAxis;
@@ -63,8 +67,9 @@ void CIEWidget::AddResponse()
 		AxisY->setTickCount(0.01);
 		Chart->addAxis(AxisY, Qt::AlignLeft);
 
-		auto ScatterSeries = new QScatterSeries;				
-		
+		auto ScatterSeries = new QScatterSeries;		
+		ScatterSeries->setColor(QColor(100, 0, 0));
+
 		QString ResultStr = QString::fromUtf8(Analyser.readAll());
 		ResultStr = ResultStr.simplified();
 
@@ -74,10 +79,10 @@ void CIEWidget::AddResponse()
 			double CIE_X = ResultList[i + 0].toDouble();
 			double CIE_Y = ResultList[i + 1].toDouble();
 
-			ScatterSeries->append(CIE_X, CIE_Y);			
+			ScatterSeries->append(CIE_X, CIE_Y);
 		}
 
-		Chart->addSeries(ScatterSeries);
+		Chart->addSeries(ScatterSeries);		
 		ScatterSeries->attachAxis(AxisX);
 		ScatterSeries->attachAxis(AxisY);
 
@@ -86,7 +91,7 @@ void CIEWidget::AddResponse()
 		ChartView->setRenderHint(QPainter::Antialiasing);
 		ChartView->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 		
-		layout()->addWidget(ChartView);
+		m_Splitter->addWidget(ChartView);
 	}
 }
 

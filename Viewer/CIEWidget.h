@@ -1,6 +1,7 @@
 
 #include <QtWidgets/QWidget>
 
+class QSplitter;
 class QHBoxLayout;
 
 class CIEWidget : public QWidget
@@ -20,5 +21,6 @@ private:
 	QString  m_LastIntensitiesFilepath;
 	QString  m_LastWavelengthsFilepath;
 
+	QSplitter* m_Splitter;
 	QHBoxLayout* m_Layout;
 };
