@@ -26,6 +26,8 @@ if(Viewer)
 		Viewer/main.cpp
 		Viewer/CIEWidget.h
 		Viewer/CIEWidget.cpp
+		Viewer/ColorEvolutionWidget.h
+		Viewer/ColorEvolutionWidget.cpp
 	)
 	
 	TARGET_LINK_LIBRARIES(Viewer Qt5::Widgets Qt5::Charts)
