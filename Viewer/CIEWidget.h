@@ -14,6 +14,13 @@ public slots:
 	void SetColorMatchingFunction();
 	void AddResponse();
 
+private slots:
+	void ProcessFinished(int ExitCode);
+
+signals:
+	void ProcessStarted(const QString& Description);
+	void ColorMatchingFunctionChanged(const QString& ColorMatchingFunctionFilepath);
+
 private:
 	void CriticalError(const QString& Message);	
 

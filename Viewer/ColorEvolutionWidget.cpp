@@ -4,6 +4,9 @@
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
 
+/**
+ * Convert a XY normalized color from XYZ to RGB space
+ */
 static QColor XYToRGB(double X, double Y)
 {
 	double Z = 1.0 - X - Y;
@@ -20,11 +23,12 @@ static QColor XYToRGB(double X, double Y)
 	};
 }
 
-ColorEvolutionWidget::ColorEvolutionWidget(QList<QPair<double, double>> XYColors, QWidget * Parent) :
+ColorEvolutionWidget::ColorEvolutionWidget(const QList<QPair<double, double>>& XYColors, QWidget * Parent) :
 	QWidget(Parent)
 {
 	m_Layout = new QHBoxLayout(this);
 
+	// Builds a QFrame for each XY color in the list XYColors
 	for (auto XY : XYColors)
 	{
 		double X = XY.first;

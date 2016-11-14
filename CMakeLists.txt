@@ -5,7 +5,7 @@ project(LightBulbChallenge)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 add_executable(
-    LightBulbChallenge
+    ColorAnalyser
     main.cpp
 	CommandLineParser.cpp
 	CommandLineParser.h
