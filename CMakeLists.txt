@@ -11,12 +11,12 @@ add_executable(
 	CommandLineParser.h
 )
 
-option(Viewer "Build CIE Diagram Viewer" ON)
+option(Viewer "Build ColorAnalyser Viewer" ON)
 
 if(Viewer)
 	SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 	SET(CMAKE_AUTOMOC ON)
-	
+
 	FIND_PACKAGE(Qt5Widgets)
 	find_package(Qt5Charts)
 
@@ -28,7 +28,8 @@ if(Viewer)
 		Viewer/CIEWidget.cpp
 		Viewer/ColorEvolutionWidget.h
 		Viewer/ColorEvolutionWidget.cpp
+        Viewer/Resources.rc
 	)
-	
+
 	TARGET_LINK_LIBRARIES(Viewer Qt5::Widgets Qt5::Charts)
 endif(Viewer)
