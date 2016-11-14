@@ -15,10 +15,16 @@ int main(int argc, char* argv[])
 	auto FileMenu = Window.menuBar()->addMenu("&File");
 
 	auto SetColorMatchingFunctionAction = FileMenu->addAction("Set Color Matching Function");
-	auto AddExperimentAction = FileMenu->addAction("Add Experiment");
+	auto AddExperimentAction = FileMenu->addAction("Add Experiment");	
 
 	QObject::connect(SetColorMatchingFunctionAction, &QAction::triggered, &theCIEWidget, &CIEWidget::SetColorMatchingFunction);
 	QObject::connect(AddExperimentAction, &QAction::triggered, &theCIEWidget, &CIEWidget::AddResponse);
+
+	FileMenu->addSeparator();
+
+	auto ExitAction = FileMenu->addAction("E&xit");
+
+	QObject::connect(ExitAction, &QAction::triggered, &App, &QApplication::quit);
 	
 	Window.resize(800, 600);
 	Window.setCentralWidget(&theCIEWidget);

@@ -16,6 +16,22 @@
 
 using namespace QtCharts;
 
+static QColor XYToRGB(double X, double Y)
+{
+	double Z = 1.0 - X - Y;
+
+	double R = (2.3706743*X + -0.9000405*Y + -0.4706338*Z) * 255.0;
+	double G = (-0.5138850*X + 1.4253036*Y + 0.0885814*Z) * 255.0;
+	double B = (0.0052982*X + -0.0146949*Y + 1.0093968*Z) * 255.0;
+
+	return QColor
+	{
+		static_cast<int>(R),
+		static_cast<int>(G),
+		static_cast<int>(B)
+	};
+}
+
 CIEWidget::CIEWidget(QWidget* Parent) :
 	QWidget(Parent)
 {
@@ -67,22 +83,20 @@ void CIEWidget::AddResponse()
 		AxisY->setTickCount(0.01);
 		Chart->addAxis(AxisY, Qt::AlignLeft);
 
-		auto ScatterSeries = new QScatterSeries;		
-		ScatterSeries->setColor(QColor(100, 0, 0));
+		auto ScatterSeries = new QScatterSeries;
 
-		QString ResultStr = QString::fromUtf8(Analyser.readAll());
-		ResultStr = ResultStr.simplified();
-
+		auto ResultStr = QString::fromUtf8(Analyser.readAll()).simplified();
 		auto ResultList = ResultStr.split(" ", QString::SkipEmptyParts);
+
 		for (int i = 0; i < ResultList.size(); i += 2)
 		{
 			double CIE_X = ResultList[i + 0].toDouble();
-			double CIE_Y = ResultList[i + 1].toDouble();
+			double CIE_Y = ResultList[i + 1].toDouble();			
 
-			ScatterSeries->append(CIE_X, CIE_Y);
-		}
+			ScatterSeries->append(CIE_X, CIE_Y);							
+		}			
 
-		Chart->addSeries(ScatterSeries);		
+		Chart->addSeries(ScatterSeries);
 		ScatterSeries->attachAxis(AxisX);
 		ScatterSeries->attachAxis(AxisY);
 
