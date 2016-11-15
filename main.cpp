@@ -8,6 +8,20 @@
 
 #include "CommandLineParser.h"
 
+struct xyYColor
+{
+	double x;
+	double y;
+	double Y;
+
+	xyYColor() = default;
+	xyYColor(double _x, double _y)
+	{
+		x = _x;
+		y = _y;
+		Y = 1.0 - x - y;
+	}
+};
 
 auto ReadCSVFile(const std::string& filepath, char Separator = ',')
 {
@@ -167,12 +181,12 @@ int main(int ArgC, char* ArgV[])
 		ColorMatching.clear();
 		ColorMatching.shrink_to_fit();
 
-		std::vector<double> WaveLengthsValues(Wavelengths.size());
+		std::vector<double> WavelenghtsValues(Wavelengths.size());
 
 #		pragma omp parallel for
 		for (int i = 0; i < Wavelengths.size(); ++i)
 		{
-			WaveLengthsValues[i] = Wavelengths[i][1];
+			WavelenghtsValues[i] = Wavelengths[i][1];
 		}
 
 		// Remove Noise from data
@@ -194,15 +208,12 @@ int main(int ArgC, char* ArgV[])
 		const double SampledLambdaStart = 340;
 		const double SampledLambdaEnd = 840;
 
-		std::vector<std::pair<double, double>> Result{ Intensities.size() };
+		std::vector<xyYColor> Result{ Intensities.size() };
 
 		// Finally process the samples
 #		pragma omp parallel for
 		for (int SampleIdx = 0; SampleIdx < Intensities.size(); ++SampleIdx)
 		{
-//#			pragma omp critical
-//			std::cout << "Sample " << SampleIdx << " of " << Intensities.size() << std::endl;
-
 			const auto& SampleData = Intensities[SampleIdx];
 			auto NumberOfSpectralSamples = static_cast<int>(SampleData.size());
 			auto NumberOfCIESamples = static_cast<int>(CIELambda.size());
@@ -219,7 +230,8 @@ int main(int ArgC, char* ArgV[])
 				X.push_back(AverageSpectrumSamples(CIELambda, CIE_X, NumberOfCIESamples, WL0, WL1));
 				Y.push_back(AverageSpectrumSamples(CIELambda, CIE_Y, NumberOfCIESamples, WL0, WL1));
 				Z.push_back(AverageSpectrumSamples(CIELambda, CIE_Z, NumberOfCIESamples, WL0, WL1));
-				Lambdas.push_back(AverageSpectrumSamples(WaveLengthsValues, SampleData, NumberOfSpectralSamples, WL0, WL1));
+
+				Lambdas.push_back(AverageSpectrumSamples(WavelenghtsValues, SampleData, NumberOfSpectralSamples, WL0, WL1));
 			}
 
 			// Finally we calculate the chromatic response of the observer ...
@@ -234,15 +246,18 @@ int main(int ArgC, char* ArgV[])
 			}
 
 			// .. and then we normalize the tristimulus values to get the XY coordinates of the CIE1931 diagram
-			double CIE_XYZ_X = XSum / (XSum + YSum + ZSum);
-			double CIE_XYZ_Y = YSum / (XSum + YSum + ZSum);
+			xyYColor Color
+			{
+				XSum / (XSum + YSum + ZSum),
+				YSum / (XSum + YSum + ZSum),				
+			};						
 
-			Result[SampleIdx] = { CIE_XYZ_X, CIE_XYZ_Y };
+			Result[SampleIdx] = Color;
 		}
 
 		for (int i = 0; i < Result.size(); ++i)
 		{
-			std::cout << Result[i].first << " " << Result[i].second << std::endl;
+			std::cout << Result[i].x << " " << Result[i].y << " " << Result[i].Y << std::endl;
 		}
 	}
 	catch (const std::runtime_error& Exception)

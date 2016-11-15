@@ -93,15 +93,16 @@ void CIEWidget::ProcessFinished(int ExitCode)
 		auto ResultStr = QString::fromUtf8(AnalyserProcess->readAll()).simplified();
 		auto ResultList = ResultStr.split(" ", QString::SkipEmptyParts);
 
-		QList<QPair<double, double>> XYColors;
+		QList<xyYColor> xyYColors;
 
-		for (int i = 0; i < ResultList.size(); i += 2)
+		for (int i = 0; i < ResultList.size(); i += 3)
 		{
-			double CIE_X = ResultList[i + 0].toDouble();
-			double CIE_Y = ResultList[i + 1].toDouble();
+			auto x = ResultList[i + 0].toDouble();
+			auto y = ResultList[i + 1].toDouble();
+			auto Y = ResultList[i + 2].toDouble();
 
-			ScatterSeries->append(CIE_X, CIE_Y);
-			XYColors.append({ CIE_X, CIE_Y });
+			ScatterSeries->append(x, y);
+			xyYColors.append({ x, y, Y });
 		}
 
 		Chart->addSeries(ScatterSeries);
@@ -114,7 +115,7 @@ void CIEWidget::ProcessFinished(int ExitCode)
 
 		QVBoxLayout* VertLayout = new QVBoxLayout;
 		VertLayout->addWidget(ChartView);
-		VertLayout->addWidget(new ColorEvolutionWidget{ XYColors, this });
+		VertLayout->addWidget(new ColorEvolutionWidget{ xyYColors, this });
 
 		auto Frame = new QFrame{ this };
 		Frame->setLayout(VertLayout);

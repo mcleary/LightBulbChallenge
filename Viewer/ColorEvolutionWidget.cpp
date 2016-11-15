@@ -4,39 +4,112 @@
 #include <QtWidgets/QFrame>
 #include <QtWidgets/QHBoxLayout>
 
-/**
- * Convert a XY normalized color from XYZ to RGB space
- */
-static QColor XYToRGB(double X, double Y)
+
+
+struct XYZColor
 {
-	double Z = 1.0 - X - Y;
+	double X;
+	double Y;
+	double Z;
+};
 
-	double R = (2.3706743*X + -0.9000405*Y + -0.4706338*Z) * 255.0;
-	double G = (-0.5138850*X + 1.4253036*Y + 0.0885814*Z) * 255.0;
-	double B = (0.0052982*X + -0.0146949*Y + 1.0093968*Z) * 255.0;
+struct RGBColor
+{
+	double R;
+	double G;
+	double B;
+};
 
-	return QColor
+XYZColor xyYToXYZ(const xyYColor& xyY)
+{
+	auto x = xyY.x;
+	auto y = xyY.y;
+	auto Y = xyY.Y;
+
+	return 
 	{
-		static_cast<int>(qRound(R)),
-		static_cast<int>(qRound(G)),
-		static_cast<int>(qRound(B))
+		(x*Y) / y,
+		Y,
+		((1.0 - x - y) * Y) / y
 	};
 }
 
-ColorEvolutionWidget::ColorEvolutionWidget(const QList<QPair<double, double>>& XYColors, QWidget * Parent) :
+inline double GammaCompending(double v, double Gamma = 2.4)
+{
+	if (v <= 0.0031308)
+	{
+		return 12.92 * v;
+	}
+	else
+	{
+		return 1.055 * std::pow(v, 1.0 / Gamma) - 0.055;
+	}
+}
+
+RGBColor XYZToRGB(const XYZColor& XYZ)
+{
+	auto X = XYZ.X;
+	auto Y = XYZ.Y;
+	auto Z = XYZ.Z;
+
+	double r = 2.3706743*X + -0.9000405*Y + -0.4706338*Z;
+	double g = -0.5138850*X + 1.4253036*Y + 0.0885814*Z;
+	double b = 0.0052982*X + -0.0146949*Y + 1.0093968*Z;
+
+	return
+	{
+		GammaCompending(r),
+		GammaCompending(g),
+		GammaCompending(b)
+	};
+}
+
+double BoundTo(double Min, double Val, double Max)
+{
+	if (Val < Min)
+	{
+		return Min;
+	}
+
+	if (Val > Max)
+	{
+		return Max;
+	}
+
+	return Val;
+}
+
+RGBColor ScaleRGB(const RGBColor& RGB)
+{
+	return
+	{
+		BoundTo(0.0, RGB.R * 255.0, 255),
+		BoundTo(0.0, RGB.G * 255.0, 255),
+		BoundTo(0.0, RGB.B * 255.0, 255)
+	};
+}
+
+ColorEvolutionWidget::ColorEvolutionWidget(const QList<xyYColor>& xyYColors, QWidget * Parent) :
 	QWidget(Parent)
 {
 	m_Layout = new QHBoxLayout(this);
 
 	// Builds a QFrame for each XY color in the list XYColors
-	for (auto XY : XYColors)
+	for (auto xyY : xyYColors)
 	{
-		double X = XY.first;
-		double Y = XY.second;
-		auto Color = XYToRGB(X, Y);
+		auto XYZ = xyYToXYZ(xyY);
+		auto RGB = XYZToRGB(XYZ);
+		auto ScalledRGB = ScaleRGB(RGB);
+
+		QColor RGBColor
+		{
+			qRound(ScalledRGB.R),
+			qRound(ScalledRGB.G),
+			qRound(ScalledRGB.B)
+		};
 
 		auto ColorFrame = new QFrame(this);
-		ColorFrame->setStyleSheet(QString("QFrame{ background: %1; }").arg(Color.name()));
+		ColorFrame->setStyleSheet(QString("QFrame{ background: %1; }").arg(RGBColor.name()));
 		ColorFrame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Fixed);
 		ColorFrame->setFixedHeight(50);
 

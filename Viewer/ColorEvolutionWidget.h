@@ -1,6 +1,13 @@
 
 #include <QtWidgets/QWidget>
 
+struct xyYColor
+{
+	double x;
+	double y;
+	double Y;
+};
+
 class QHBoxLayout;
 
 /**
@@ -9,7 +16,7 @@ class QHBoxLayout;
 class ColorEvolutionWidget : public QWidget
 {
 public:
-	explicit ColorEvolutionWidget(const QList<QPair<double, double>>& XYColors, QWidget* Parent = nullptr);	
+	explicit ColorEvolutionWidget(const QList<xyYColor>& XYColors, QWidget* Parent = nullptr);	
 
 private:	
 	QHBoxLayout* m_Layout;
