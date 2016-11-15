@@ -4,12 +4,22 @@ project(LightBulbChallenge)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+add_library(
+	ColorUtils
+	ColorUtils/ColorUtils.h
+	ColorUtils/ColorUtils.cpp
+)
+
+INCLUDE_DIRECTORIES(ColorUtils)
+
 add_executable(
     ColorAnalyser
-    main.cpp
-	CommandLineParser.cpp
-	CommandLineParser.h
+    ColorAnalyser/main.cpp
+	ColorAnalyser/CommandLineParser.h
+	ColorAnalyser/CommandLineParser.cpp	
 )
+
+target_link_libraries(ColorAnalyser ColorUtils)
 
 option(Viewer "Build CIE Diagram Viewer" ON)
 
@@ -17,7 +27,7 @@ if(Viewer)
 	SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 	SET(CMAKE_AUTOMOC ON)
 	
-	FIND_PACKAGE(Qt5Widgets)
+	find_package(Qt5Widgets)
 	find_package(Qt5Charts)
 
 	add_executable(
@@ -30,5 +40,5 @@ if(Viewer)
 		Viewer/ColorEvolutionWidget.cpp
 	)
 	
-	TARGET_LINK_LIBRARIES(Viewer Qt5::Widgets Qt5::Charts)
+	target_link_libraries(Viewer Qt5::Widgets Qt5::Charts ColorUtils)
 endif(Viewer)

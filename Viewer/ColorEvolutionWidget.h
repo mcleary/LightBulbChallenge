@@ -1,12 +1,7 @@
 
 #include <QtWidgets/QWidget>
 
-struct xyYColor
-{
-	double x;
-	double y;
-	double Y;
-};
+#include <ColorUtils/ColorUtils.h>
 
 class QHBoxLayout;
 

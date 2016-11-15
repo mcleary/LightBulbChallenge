@@ -8,20 +8,7 @@
 
 #include "CommandLineParser.h"
 
-struct xyYColor
-{
-	double x;
-	double y;
-	double Y;
-
-	xyYColor() = default;
-	xyYColor(double _x, double _y)
-	{
-		x = _x;
-		y = _y;
-		Y = 1.0 - x - y;
-	}
-};
+#include "ColorUtils/ColorUtils.h"
 
 auto ReadCSVFile(const std::string& filepath, char Separator = ',')
 {
@@ -245,14 +232,9 @@ int main(int ArgC, char* ArgV[])
 				ZSum += Z[i] * Lambdas[i];
 			}
 
-			// .. and then we normalize the tristimulus values to get the XY coordinates of the CIE1931 diagram
-			xyYColor Color
-			{
-				XSum / (XSum + YSum + ZSum),
-				YSum / (XSum + YSum + ZSum),				
-			};						
+			// .. and then we normalize the tristimulus values to get the XY coordinates of the CIE1931 diagram			
 
-			Result[SampleIdx] = Color;
+			Result[SampleIdx] = XYZToxyY({ XSum, YSum, ZSum });
 		}
 
 		for (int i = 0; i < Result.size(); ++i)
