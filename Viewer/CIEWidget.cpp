@@ -61,7 +61,14 @@ void CIEWidget::AddExperiment()
 
 void CIEWidget::RunLastExperiment()
 {
-    RunExperiment(m_LastIntensitiesFilepath, m_LastWavelengthsFilepath, m_ColorMatchingFunctionFilepath);
+	if (m_LastIntensitiesFilepath.isEmpty() || m_LastWavelengthsFilepath.isEmpty() || m_ColorMatchingFunctionFilepath.isEmpty())
+	{
+		CriticalError(tr("Cannot run last experimenet. Please setup input parameters."));
+	}
+	else
+	{
+		RunExperiment(m_LastIntensitiesFilepath, m_LastWavelengthsFilepath, m_ColorMatchingFunctionFilepath);
+	}    
 }
 
 void CIEWidget::ProcessFinished(int ExitCode)
@@ -131,11 +138,9 @@ void CIEWidget::SaveSettings()
     Settings.setValue("WavelengthsFilepath", m_LastWavelengthsFilepath);
 }
 
-#include <QDebug>
-
 void CIEWidget::LoadSettings()
 {
-    QSettings Settings;
+    QSettings Settings;	
     
     m_ColorMatchingFunctionFilepath = Settings.value("ColorMatchingFunction").toString();
     m_LastIntensitiesFilepath = Settings.value("IntensitiesFilepath").toString();
@@ -156,6 +161,7 @@ void CIEWidget::RunExperiment(const QString& IntensitiesFilepath, const QString&
     connect(AnalyserProcess, SIGNAL(finished(int)), this, SLOT(ProcessFinished(int)));
     
 #if defined(Q_OS_MAC) || defined(Q_OS_UNIX)
+	//FIXME: This won't work properly with macOS bundles.
     AnalyserProcess->start("./ColorAnalyser", AnalyserParams);
 #else
     AnalyserProcess->start("ColorAnalyser", AnalyserParams);
