@@ -38,6 +38,7 @@ if(Viewer)
 		Viewer/CIEWidget.cpp
 		Viewer/ColorEvolutionWidget.h
 		Viewer/ColorEvolutionWidget.cpp
+        Viewer/Resources.rc
 	)
 	
 	target_link_libraries(Viewer Qt5::Widgets Qt5::Charts ColorUtils)
