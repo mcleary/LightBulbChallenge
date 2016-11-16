@@ -25,8 +25,10 @@ struct RGBColor
 
 inline xyYColor XYZToxyY(const XYZColor& XYZ)
 {
-    double x = XYZ.X / (XYZ.X + XYZ.Y + XYZ.Z);
-    double y = XYZ.Y / (XYZ.X + XYZ.Y + XYZ.Z);
+    const double NormFactor = (XYZ.X + XYZ.Y + XYZ.Z);
+    
+    double x = XYZ.X / NormFactor;
+    double y = XYZ.Y / NormFactor;
     
 	return
 	{
@@ -68,9 +70,9 @@ inline RGBColor XYZToRGB(const XYZColor& XYZ, double Gamma = 2.4)
 	auto Y = XYZ.Y;
 	auto Z = XYZ.Z;
 
-	double r = 2.3706743*X + -0.9000405*Y + -0.4706338*Z;
+	double r =  2.3706743*X - 0.9000405*Y - 0.4706338*Z;
 	double g = -0.5138850*X + 1.4253036*Y + 0.0885814*Z;
-	double b = 0.0052982*X + -0.0146949*Y + 1.0093968*Z;
+	double b =  0.0052982*X - 0.0146949*Y + 1.0093968*Z;
 
 	return
 	{
