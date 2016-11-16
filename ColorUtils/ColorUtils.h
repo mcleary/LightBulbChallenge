@@ -25,11 +25,14 @@ struct RGBColor
 
 inline xyYColor XYZToxyY(const XYZColor& XYZ)
 {
+    double x = XYZ.X / (XYZ.X + XYZ.Y + XYZ.Z);
+    double y = XYZ.Y / (XYZ.X + XYZ.Y + XYZ.Z);
+    
 	return
 	{
-		XYZ.X / (XYZ.X + XYZ.Y + XYZ.Z),
-		XYZ.Y / (XYZ.X + XYZ.Y + XYZ.Z),
-		1.0 - XYZ.X - XYZ.Y
+        x,
+        y,
+		1.0 - x - y
 	};
 }
 
@@ -77,7 +80,8 @@ inline RGBColor XYZToRGB(const XYZColor& XYZ, double Gamma = 2.4)
 	};
 }
 
-inline double BoundTo(double Min, double Val, double Max)
+template<typename T>
+inline T BoundTo(T Min, T Val, T Max)
 {
 	if (Val < Min)
 	{

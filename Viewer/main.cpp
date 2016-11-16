@@ -10,17 +10,25 @@ int main(int argc, char* argv[])
 	QApplication App(argc, argv);		
 
 	QMainWindow Window;	
-	CIEWidget TheCIEWidget;
+
+    CIEWidget TheCIEWidget;
 	
 	// Build the Menu bar
 	auto FileMenu = Window.menuBar()->addMenu(QObject::tr("&File"));
-	auto SetColorMatchingFunctionAction = FileMenu->addAction(QObject::tr("Set Color Matching Function"));
+
+    auto SetColorMatchingFunctionAction = FileMenu->addAction(QObject::tr("Set Color Matching Function"));
 	auto AddExperimentAction = FileMenu->addAction(QObject::tr("Add Experiment"));
 
 	QObject::connect(SetColorMatchingFunctionAction, &QAction::triggered, &TheCIEWidget, &CIEWidget::SetColorMatchingFunction);
-	QObject::connect(AddExperimentAction, &QAction::triggered, &TheCIEWidget, &CIEWidget::AddResponse);	
+	QObject::connect(AddExperimentAction, &QAction::triggered, &TheCIEWidget, &CIEWidget::AddExperiment);
 
-	FileMenu->addSeparator();	
+	FileMenu->addSeparator();
+    
+    auto RunLastExperimentAction = FileMenu->addAction(QObject::tr("Run Last Experiment"));
+
+    QObject::connect(RunLastExperimentAction, &QAction::triggered, &TheCIEWidget, &CIEWidget::RunLastExperiment);
+    
+    FileMenu->addSeparator();
 
 	auto ExitAction = FileMenu->addAction("E&xit");
 

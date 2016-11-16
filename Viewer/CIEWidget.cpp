@@ -10,11 +10,13 @@
 #include <QtWidgets/QSplitter>
 
 #include <QtCore/QProcess>
+#include <QtCore/QSettings>
 
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
 #include <QtCharts/QValueAxis>
+
 
 using namespace QtCharts;
 
@@ -24,9 +26,16 @@ CIEWidget::CIEWidget(QWidget* Parent) :
 	m_Splitter = new QSplitter{ this };
 	m_Layout = new QHBoxLayout{ this };
 	m_Layout->addWidget(m_Splitter);
+    
+    LoadSettings();
 }
 
-void CIEWidget::AddResponse()
+CIEWidget::~CIEWidget()
+{
+    SaveSettings();
+}
+
+void CIEWidget::AddExperiment()
 {
 	auto IntensitiesFilepath = QFileDialog::getOpenFileName(this, tr("File with Intensities..."), m_LastIntensitiesFilepath, "CSV Files (*.csv)");
 	auto WavelengthsFilepath = QFileDialog::getOpenFileName(this, tr("File with Wavelengths..."), IntensitiesFilepath, "CSV Files (*.csv)");
@@ -44,24 +53,15 @@ void CIEWidget::AddResponse()
 		// Call the ColorAnalyser as a subprocess of this application
 
 		m_LastWavelengthsFilepath = WavelengthsFilepath;
-		m_LastIntensitiesFilepath = IntensitiesFilepath;		
-
-		// Make this an asynchronous call
-		//QProcess Analyser{ this };
-		auto AnalyserProcess = new QProcess{ this };
-		QStringList AnalyserParams;
-		
-		AnalyserParams 
-			<< "--intensities" << m_LastIntensitiesFilepath
-			<< "--wavelengths" << m_LastWavelengthsFilepath
-			<< "--color-matching" << m_ColorMatchingFunctionFilepath;
-
-		AnalyserProcess->start("ColorAnalyser", AnalyserParams);		
-
-		connect(AnalyserProcess, SIGNAL(finished(int)), this, SLOT(ProcessFinished(int)));		
-		
-		emit ProcessStarted(tr("Processing '%1'").arg(m_LastIntensitiesFilepath));
+		m_LastIntensitiesFilepath = IntensitiesFilepath;
+        
+        RunExperiment(IntensitiesFilepath, WavelengthsFilepath, m_ColorMatchingFunctionFilepath);
 	}
+}
+
+void CIEWidget::RunLastExperiment()
+{
+    RunExperiment(m_LastIntensitiesFilepath, m_LastWavelengthsFilepath, m_ColorMatchingFunctionFilepath);
 }
 
 void CIEWidget::ProcessFinished(int ExitCode)
@@ -81,11 +81,9 @@ void CIEWidget::ProcessFinished(int ExitCode)
 		Chart->setAnimationOptions(QChart::AllAnimations);
 
 		auto AxisX = new QValueAxis;
-		AxisX->setTickCount(0.01);
 		Chart->addAxis(AxisX, Qt::AlignBottom);
 
 		auto AxisY = new QValueAxis;
-		AxisY->setTickCount(0.01);
 		Chart->addAxis(AxisY, Qt::AlignLeft);
 
 		auto ScatterSeries = new QScatterSeries;
@@ -122,6 +120,48 @@ void CIEWidget::ProcessFinished(int ExitCode)
 
 		m_Splitter->addWidget(Frame);
 	}		
+}
+
+void CIEWidget::SaveSettings()
+{
+    QSettings Settings;
+    
+    Settings.setValue("ColorMatchingFunction", m_ColorMatchingFunctionFilepath);
+    Settings.setValue("IntensitiesFilepath", m_LastIntensitiesFilepath);
+    Settings.setValue("WavelengthsFilepath", m_LastWavelengthsFilepath);
+}
+
+#include <QDebug>
+
+void CIEWidget::LoadSettings()
+{
+    QSettings Settings;
+    
+    m_ColorMatchingFunctionFilepath = Settings.value("ColorMatchingFunction").toString();
+    m_LastIntensitiesFilepath = Settings.value("IntensitiesFilepath").toString();
+    m_LastWavelengthsFilepath = Settings.value("WavelengthsFilepath").toString();
+}
+
+void CIEWidget::RunExperiment(const QString& IntensitiesFilepath, const QString& WavelengthsFilepath, const QString& ColorMatchingFilepath)
+{
+    // Make this an asynchronous cal
+    auto AnalyserProcess = new QProcess{ this };
+    QStringList AnalyserParams;
+    
+    AnalyserParams
+    << "--intensities" << IntensitiesFilepath
+    << "--wavelengths" << WavelengthsFilepath
+    << "--color-matching" << ColorMatchingFilepath;
+    
+    connect(AnalyserProcess, SIGNAL(finished(int)), this, SLOT(ProcessFinished(int)));
+    
+#if defined(Q_OS_MAC) || defined(Q_OS_UNIX)
+    AnalyserProcess->start("./ColorAnalyser", AnalyserParams);
+#else
+    AnalyserProcess->start("ColorAnalyser", AnalyserParams);
+#endif
+    
+    emit ProcessStarted(tr("Processing '%1'").arg(IntensitiesFilepath));
 }
 
 void CIEWidget::CriticalError(const QString& Message)
