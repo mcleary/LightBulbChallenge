@@ -71,5 +71,6 @@ Despite not being required, I decided to write a GUI application to give to the 
 - **Color evolution**: Below the charts there is a series of rectangles where the user can see the sRGB representation of each timestamp. The color variation if very subtle, but they are particularly visible for dataset `\a\`.
 - **Statistics**: The same statistics the command line tool calculates are displayed with graphical labels in the Viewer application.
 - **Dark theme**: Dark themes are everywhere!
+- **CIE-1931 plot**: The charts displays the CIE xyY color space. Each circle represents a timestamp in the chromaticity diagram. The user can se how the color is varying with this kind of chart.
 
 ![](https://raw.githubusercontent.com/mcleary/LightBulbChallenge/master/Screenshots/Viewer1.png)
