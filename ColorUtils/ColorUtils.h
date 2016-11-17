@@ -116,10 +116,12 @@ public:
 	xyYColor Average;	
 	xyYColor StdDev;
 	xyYColor RelStdDev;
+	double   DistanceToWhite;
 
 private:
 	void CalculateAverage();
 	void CalculateStdDev();	
+	void CalculateDistanceToWhite();
 
 	const xyYColor* Colors;
 	int Count;

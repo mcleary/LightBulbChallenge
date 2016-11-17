@@ -15,4 +15,5 @@ private:
 	QLabel* m_AverageColorLabel;
 	QLabel* m_StdDevColorLabel;
 	QLabel* m_VarColorLabel;	
+	QLabel* m_DistanceToWhiteLabel;
 };

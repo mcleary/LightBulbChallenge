@@ -142,6 +142,8 @@ int main(int ArgC, char* ArgV[])
 		return EXIT_FAILURE;
 	}
 
+	bool bPrintColorStats = CmdParser.OptionExists("--stats");
+
 	auto IntensitiesFilepath = CmdParser.GetOptionValue("--intensities");
 	auto WavelengthsFilepath = CmdParser.GetOptionValue("--wavelengths");
 	auto ColorMatchingFilepath = CmdParser.GetOptionValue("--color-matching");
@@ -240,6 +242,15 @@ int main(int ArgC, char* ArgV[])
 		for (int i = 0; i < Result.size(); ++i)
 		{
 			std::cout << Result[i].x << " " << Result[i].y << " " << Result[i].Y << std::endl;
+		}		
+
+		if (bPrintColorStats)
+		{
+			xyYColorStatistics ColorStats{ Result.data(), static_cast<int>(Result.size()) };
+			std::cout << "Avg        : x: " << ColorStats.Average.x   << " y: " << ColorStats.Average.y   << std::endl;
+			std::cout << "StdDev     : x: " << ColorStats.StdDev.x    << " y: " << ColorStats.StdDev.y    << std::endl;
+			std::cout << "Rel. StdDev: x: " << ColorStats.RelStdDev.x << " y: " << ColorStats.RelStdDev.y << std::endl;
+			std::cout << "Distance to White: " << ColorStats.DistanceToWhite << std::endl;
 		}
 	}
 	catch (const std::runtime_error& Exception)

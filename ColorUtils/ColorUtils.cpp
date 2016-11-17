@@ -6,6 +6,7 @@ xyYColorStatistics::xyYColorStatistics(const xyYColor * ColorData, int NumberOfC
 {
 	CalculateAverage();
 	CalculateStdDev();
+	CalculateDistanceToWhite();
 }
 
 void xyYColorStatistics::CalculateAverage()
@@ -43,4 +44,10 @@ void xyYColorStatistics::CalculateStdDev()
 	RelStdDev.x = StdDev.x / Average.x;
 	RelStdDev.y = StdDev.y / Average.y;
 	RelStdDev.Y = StdDev.Y / Average.Y;
+}
+
+void xyYColorStatistics::CalculateDistanceToWhite()
+{	
+	const double PureWhiteCoord = 1.0 / 3.0;
+	DistanceToWhite = std::sqrt(std::pow(Average.x - PureWhiteCoord, 2) + std::pow(Average.y - PureWhiteCoord, 2));
 }
