@@ -107,3 +107,20 @@ inline RGBColor ScaleRGB(const RGBColor& RGB)
 		BoundTo(0.0, RGB.B * 255.0, 255.0)
 	};
 }
+
+class xyYColorStatistics
+{
+public:
+	explicit xyYColorStatistics(const xyYColor* ColorData, int NumberOfColors);
+
+	xyYColor Average;	
+	xyYColor StdDev;
+	xyYColor RelStdDev;
+
+private:
+	void CalculateAverage();
+	void CalculateStdDev();	
+
+	const xyYColor* Colors;
+	int Count;
+};

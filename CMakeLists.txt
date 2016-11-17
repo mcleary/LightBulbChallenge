@@ -4,9 +4,13 @@ project(LightBulbChallenge)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-add_definitions(
-    -std=c++14
-)
+IF(MSVC)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /openmp")
+ELSE()
+	add_definitions(
+		-std=c++14	
+	)
+endif()
 
 add_library(
     ColorUtils
@@ -43,6 +47,8 @@ if(Viewer)
             Viewer/CIEWidget.cpp
             Viewer/ColorEvolutionWidget.h
             Viewer/ColorEvolutionWidget.cpp
+			Viewer/ColorStatisticsWidget.h
+			Viewer/ColorStatisticsWidget.cpp
             Viewer/Resources.rc
 	)
 	

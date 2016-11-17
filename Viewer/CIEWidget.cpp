@@ -2,6 +2,7 @@
 #include "CIEWidget.h"
 
 #include "ColorEvolutionWidget.h"
+#include "ColorStatisticsWidget.h"
 
 #include <QtWidgets/QAction>
 #include <QtWidgets/QMessageBox>
@@ -80,6 +81,7 @@ void CIEWidget::ProcessFinished(int ExitCode)
 	else
 	{
 		auto AnalyserProcess = qobject_cast<QProcess*>(sender());		
+		AnalyserProcess->deleteLater();
 
 		// Build the Chart and the ColorEvolutionWidget
 		auto Chart = new QChart;
@@ -121,6 +123,7 @@ void CIEWidget::ProcessFinished(int ExitCode)
 		QVBoxLayout* VertLayout = new QVBoxLayout;
 		VertLayout->addWidget(ChartView);
 		VertLayout->addWidget(new ColorEvolutionWidget{ xyYColors, this });
+		VertLayout->addWidget(new ColorStatisticsWidget{ xyYColors, this });
 
 		auto Frame = new QFrame{ this };
 		Frame->setLayout(VertLayout);

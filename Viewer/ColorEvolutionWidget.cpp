@@ -32,5 +32,5 @@ ColorEvolutionWidget::ColorEvolutionWidget(const QList<xyYColor>& xyYColors, QWi
 
 		m_Layout->setSpacing(1);
 		m_Layout->addWidget(ColorFrame);
-	}
+	}	
 }
