@@ -43,21 +43,21 @@ This tool can be used like the following:
 
 ### Results
     Dataset \a\:
-        Average: (x,y) = (0.377969, 0.401221)
-        Std Dev: (x,y) = (7.32384e-8, 6.35259e-8)
-        Distance to white: 0.0812473
+        Average: (x,y) = (0.33569, 0.335381)
+        Std Dev: (x,y) = (1.32136e-7, 1.02374e-7)
+        Distance to white: 0.00312155
 
     Dataset \b\:
-        Average: (x,y) = (0.376193, 0.399514)
-        Std Dev: (x,y) = (3.11046e-13, 3.5039e-12)
-        Distance to white: 0.0788465
+        Average: (x,y) = (0.333294, 0.333224)
+        Std Dev: (x,y) = (1.01294e-12, 4.36739e-12)
+        Distance to white: 0.000116089
 
     Dataset \b\:
-        Average: (x,y) = (0.376182, 0.399476)
-        Std Dev: (x,y) = (8.15629e-13, 1.0278e-11)
-        Distance to white: 0.0788091
+        Average: (x,y) = (0.333274, 0.333182)
+        Std Dev: (x,y) = (3.17344e-12, 1.25834e-11)
+        Distance to white: 0.000162174
 
-Light bulbs b and c have a very small standard deviation, which means that the color variation over time is smaller compared to light bulb a. Also, bulb b has a slightly smaller standard deviation than bulb c, which should represent a good choice for bulb technology.
+Light bulbs b and c have a very small standard deviation, which means that the color variation over time is smaller compared to light bulb a. Also, bulb b has a slightly smaller standard deviation than bulb c, which should represent a good choice for bulb technology. Moreover, in the GUI application the user can see the RGB representation of the spectrometer samples over time. It is noticeable that the bulb a has more abrupt changes in the color one can see with a naked eye.
 
 **Obs**: The *Distance to white* represents the distance from the *Average* color to the true white point in the CIE-1931 diagram `(x,y) = (1/3, 1/3)`.
 

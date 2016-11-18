@@ -117,19 +117,6 @@ auto MovingAverageFilter(const std::vector<double>& Values, int N = 10)
 	return Result;
 }
 
-void NormalizeData(std::vector<double>& Data)
-{
-	auto MinMaxPair = std::minmax_element(Data.begin(), Data.end());
-	auto Min = *MinMaxPair.first;
-	auto Max = *MinMaxPair.second;
-
-#	pragma omp parallel for
-	for (int i = 0; i < Data.size(); ++i)
-	{
-		Data[i] = (Data[i] - Min) / (Max - Min);
-	}
-}
-
 int main(int ArgC, char* ArgV[])
 {
 	CommandLineParser CmdParser(ArgC, ArgV);
@@ -187,11 +174,6 @@ int main(int ArgC, char* ArgV[])
 			}
 			Intensities.swap(FilteredIntensities);
 		}
-
-		// Normalize the Color Matching function
-		NormalizeData(CIE_X);
-		NormalizeData(CIE_Y);
-		NormalizeData(CIE_Z);
 
 		// Define the visible spectrum
 		const double SampledLambdaStart = 340;
